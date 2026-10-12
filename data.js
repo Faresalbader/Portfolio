@@ -1,11 +1,12 @@
 window.PORTFOLIO_SEED = {
- "updated": 1791788165214,
+ "updated": 1791789578126,
  "profile": {
   "name": "فارس البدر",
   "tagline": "طالب في الصف الأول الثانوي، شغوف بالتقنية والابتكار وتطوير الحلول الذكية التي تسهم في تحسين جودة الحياة وتخدم رؤية السعودية 2030. أحرص على الدمج بين المهارات البرمجية والحلول الهندسية وبين مهارات التواصل والإلقاء المتميز.",
   "email": "fireboy77634@gmail.com",
   "grade": 10,
-  "photo": ""
+  "photo": "",
+  "hidePhoto": true
  },
  "about": {
   "bio": "طالب في المرحلة الثانوية, ادرس حاليا في ثانوية اليمامة بالرياض, مهتم بالدمج بين مهارات التواصل والتعلم والتقنية.",
@@ -80,7 +81,12 @@ window.PORTFOLIO_SEED = {
    "org": "ثانوية اليمامة",
    "result": "مشارك",
    "desc": "قدمت مشروع جامعة الفضاء مع فريقي.",
-   "en": {},
+   "en": {
+    "title": "Attending the World Space Week exhibition at the school",
+    "org": "Al-Yamamah High School",
+    "result": "<g id=\"34\">C</g><g id=\"35\">ONTRIBUTE</g>",
+    "desc": "I presented the Space University project with my team."
+   },
    "section": "activities",
    "cat": "event",
    "grade": 10,
@@ -101,7 +107,10 @@ window.PORTFOLIO_SEED = {
    "org": "",
    "result": "",
    "desc": "موقع جامعة الفضاء بحثت فيه عن الفضاء من مصادر مثل Nasa ووكالة الفضاء السعودية.",
-   "en": {},
+   "en": {
+    "title": "Space research (Space University website)",
+    "desc": "The website of the Space University in which I searched for space from sources such as Nasa and the Saudi Space Agency."
+   },
    "section": "writing",
    "cat": "research",
    "grade": 10,
@@ -119,7 +128,7 @@ window.PORTFOLIO_SEED = {
  ],
  "en": {
   "profile": {
-   "name": "Your Name",
+   "name": "",
    "tagline": "A 10th grader who builds things, tries things, and keeps track of it all. This page grows with me until graduation."
   },
   "about": {
