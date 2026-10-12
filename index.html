@@ -660,6 +660,22 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     '<div class="addline"><input data-list-in="'+key+'" placeholder="'+T('أضف إلى ','Add to ')+esc(title)+'" maxlength="40"><button class="btn small" data-add-list="'+key+'">'+T('إضافة','Add')+'</button></div>';
   }
 
+  function photoBlock(){
+    if(S.profile.hidePhoto){
+      return editing?'<div><button class="btn small" id="photoShow">'+T('إظهار مربع الصورة','Show the photo box')+'</button></div>':'';
+    }
+    return '<div><div class="photo" aria-label="'+T('صورتي','My photo')+'">'+(S.profile.photo?'<img src="'+esc(S.profile.photo)+'" alt="">':esc(photoInitial()))+'</div>'+
+      '<div class="editonly" style="flex-wrap:wrap;gap:8px;margin-top:14px">'+
+        '<button class="btn small" id="photoBtn">'+(S.profile.photo?T('تغيير الصورة','Change photo'):T('إضافة صورة','Add a photo'))+'</button>'+
+        (S.profile.photo?'<button class="btn small" id="photoRm">'+T('إزالة الصورة','Remove photo')+'</button>':'')+
+        '<button class="btn small" id="photoHide">'+T('إخفاء المربع','Hide the box')+'</button>'+
+      '</div></div>';
+  }
+  function photoInitial(){
+    var name=(textFor('profile.name',true)||'').trim();
+    return Array.from(name).filter(function(c){return c.trim()}).slice(0,1).join('')||'?';
+  }
+
   function pageAbout(){
     var name=(textFor('profile.name',true)||'').trim();
     var ini=Array.from(name).filter(function(c){return c.trim()}).slice(0,1).join('')||'?';
@@ -672,8 +688,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
         '<h2>'+T('أهدافي وطموحاتي','Goals and ambitions')+'</h2>'+fld('p','about.goals',T('ماذا تريد أن تدرس وأين تريد أن تصل؟','What do you want to study and where do you want to get to?'),'lead',true)+
         chipList('interests')+chipList('skills')+chipList('languages')+
       '</div><aside class="side">'+
-        '<div><div class="photo" aria-label="'+T('صورتي','My photo')+'">'+(S.profile.photo?'<img src="'+esc(S.profile.photo)+'" alt="">':esc(ini))+'</div>'+
-        '<button class="btn small editonly" id="photoBtn" style="margin-top:14px">'+T('تغيير الصورة','Change photo')+'</button></div>'+
+        photoBlock()+
         '<div><dl class="facts">'+(facts||'<div class="fact"><dt>'+T('لا معلومات بعد','No details yet')+'</dt></div>')+'</dl>'+
         '<button class="btn small editonly" id="addFact" style="margin-top:12px">'+T('إضافة معلومة','Add a detail')+'</button></div>'+
       '</aside></div></section>';
@@ -884,6 +899,9 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     if(d.rmFact!==undefined){factsFor().splice(Number(d.rmFact),1);save();render(false);return}
     if(t.id==='addFact'){factsFor().push({k:'',v:''});save();render(false);return}
     if(t.id==='photoBtn'){$('#photoIn').click();return}
+    if(t.id==='photoRm'){S.profile.photo='';save();render(false);toast(T('تمت إزالة الصورة','Photo removed'));return}
+    if(t.id==='photoHide'){S.profile.hidePhoto=true;save();render(false);toast(T('تم إخفاء مربع الصورة','Photo box hidden'));return}
+    if(t.id==='photoShow'){S.profile.hidePhoto=false;save();render(false);return}
   });
   function addToList(key){
     var i=$('[data-list-in="'+key+'"]');var v=i.value.trim();if(!v)return;
