@@ -306,7 +306,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     <div class="row2">
       <label>النوع <select id="fCat"></select></label>
       <label>الصف
-        <select id="fGrade"><option value="10">الصف العاشر</option><option value="11">الصف الحادي عشر</option><option value="12">الصف الثاني عشر</option></select>
+        <select id="fGrade"></select>
       </label>
     </div>
     <label>التاريخ <span class="hint">اختياري. يُستخدم للترتيب داخل كل صف.</span>
@@ -389,7 +389,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="photoIn" accept="image/*" hidden>
 
-<script src="data.js"></script>
+<script>document.write('<script src="data.js?v='+Math.floor(Date.now()/60000)+'"><\/script>')</script>
 <script>
 (function(){
   /* كلمة المرور محفوظة كبصمة SHA-256 وليست نصًا صريحًا */
@@ -473,7 +473,9 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
       org:'مكان النشر أو الجهة'}
   };
   var SEC_KEYS=['projects','activities','awards','writing'];
-  var GRADE_AR={10:'العاشر',11:'الحادي عشر',12:'الثاني عشر'};
+  var GRADE_AR={1:'الأول',2:'الثاني',3:'الثالث',4:'الرابع',5:'الخامس',6:'السادس',7:'السابع',8:'الثامن',9:'التاسع',10:'العاشر',11:'الحادي عشر',12:'الثاني عشر'};
+  function yearMatch(e){return view.year==='all'||(view.year==='early'?e.grade<10:String(e.grade)===String(view.year))}
+  function defaultGrade(){return view.year==='early'?9:(view.year!=='all'?Number(view.year):S.profile.grade)}
   var LIST_KEYS=['interests','skills','languages'];
 
   var ICON_LINK='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
@@ -633,7 +635,9 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
         '<div class="cnt">'+cnt(counts[g])+'</div></button>'+
         (g!==cur?'<button class="btn small setnow" data-setnow="'+g+'">'+T('أنا في ','I am in ')+gname(g)+'</button>':'')+'</div>';
     });
-    return '<div class="track" aria-label="'+T('الصفوف الثلاثة','The three grades')+'">'+h+'</div>';
+    var early=S.entries.filter(function(e){return e.grade<10}).length;
+    var eb=(early||editing)?'<button class="chip earlier" data-fyear="early" aria-pressed="'+(view.year==='early')+'">'+T('الصفوف السابقة','Earlier grades')+' ('+cnt(early)+')</button>':'';
+    return '<div class="track" aria-label="'+T('الصفوف الثلاثة','The three grades')+'">'+h+'</div>'+(eb?'<div style="margin-top:18px">'+eb+'</div>':'');
   }
 
   function pageHome(){
@@ -641,7 +645,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     SEC_KEYS.forEach(function(k){
       tiles+='<a class="tile" data-sec="'+k+'" href="#/'+k+'"><h3>'+tr(SECTIONS[k].label)+'</h3><p>'+tr(SECTIONS[k].desc)+'</p><div class="tc">'+cnt(entriesOf(k).length)+'</div></a>';
     });
-    var rec=S.entries.filter(function(e){return view.year==='all'||String(e.grade)===String(view.year)}).sort(byDate).slice(0,6);
+    var rec=S.entries.filter(yearMatch).sort(byDate).slice(0,6);
     var rh=rec.length?'<div class="rows">'+rec.map(function(e){
       var sc=SECTIONS[e.section]||{cats:{}};
       return '<a class="row" data-sec="'+esc(e.section)+'" href="#/'+esc(e.section)+'"><span class="pill">'+esc(tr(sc.cats[e.cat]||''))+'</span><b>'+esc(ef(e,'title'))+'</b><span class="date">'+esc(fmtDate(e.date))+'</span></a>';
@@ -649,7 +653,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     return '<section class="hero wrap"><h1>'+T('مرحبًا، أنا ','Hi, I\'m ')+fld('span','profile.name',T('اسمك','Your name'))+'</h1>'+
       fld('p','profile.tagline',T('اكتب جملة تعرّف بك','Write one line about yourself'),'tag',true)+trackHtml()+'</section>'+
       '<section class="block wrap"><h2 class="h2">'+T('ما ستجده هنا','What you will find here')+'</h2><div class="tiles">'+tiles+'</div></section>'+
-      '<section class="block wrap" id="recent"><h2 class="h2">'+T('آخر الإضافات','Latest additions')+(view.year==='all'?'':T(' في ',' in ')+gname(Number(view.year)))+'</h2>'+rh+'</section>';
+      '<section class="block wrap" id="recent"><h2 class="h2">'+T('آخر الإضافات','Latest additions')+(view.year==='all'?'':view.year==='early'?T(' في الصفوف السابقة',' in earlier grades'):T(' في ',' in ')+gname(Number(view.year)))+'</h2>'+rh+'</section>';
   }
 
   function chipList(key){
@@ -696,10 +700,11 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
 
   function pageSection(key){
     var sc=SECTIONS[key];
-    var years=view.year==='all'?[12,11,10]:[Number(view.year)];
+    var earlyYears=[9,8,7,6,5,4,3,2,1].filter(function(g){return entriesOf(key).some(function(e){return e.grade===g&&(view.cat==='all'||e.cat===view.cat)})});
+    var years=view.year==='all'?[12,11,10].concat(earlyYears):view.year==='early'?earlyYears:[Number(view.year)];
     var chips='<div class="chips" role="group" aria-label="'+T('النوع','Type')+'"><button class="chip" data-cat="all" aria-pressed="'+(view.cat==='all')+'">'+T('الكل','All')+'</button>'+
       Object.keys(sc.cats).map(function(k){return '<button class="chip" data-cat="'+k+'" aria-pressed="'+(view.cat===k)+'">'+tr(sc.cats[k])+'</button>'}).join('')+'</div>';
-    var ychips='<div class="chips" role="group" aria-label="'+T('الصف','Grade')+'"><button class="chip" data-fyear="all" aria-pressed="'+(view.year==='all')+'">'+T('كل الصفوف','All grades')+'</button>'+
+    var ychips='<div class="chips" role="group" aria-label="'+T('الصف','Grade')+'"><button class="chip" data-fyear="all" aria-pressed="'+(view.year==='all')+'">'+T('كل الصفوف','All grades')+'</button><button class="chip" data-fyear="early" aria-pressed="'+(view.year==='early')+'">'+T('السابقة','Earlier')+'</button>'+
       [10,11,12].map(function(g){return '<button class="chip" data-fyear="'+g+'" aria-pressed="'+(String(view.year)===String(g))+'">'+(L==='en'?gname(g):gshort(g))+'</button>'}).join('')+'</div>';
     var h='',shown=0;
     years.forEach(function(y){
@@ -950,6 +955,13 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
   }
 
   /* ---------- entry dialog ---------- */
+  (function(){
+    var o='<optgroup label="'+T('الصفوف الثلاثة','The three grades')+'">';
+    [10,11,12].forEach(function(g){o+='<option value="'+g+'">'+gname(g)+'</option>'});
+    o+='</optgroup><optgroup label="'+T('الصفوف السابقة','Earlier grades')+'">';
+    [9,8,7,6,5,4,3,2,1].forEach(function(g){o+='<option value="'+g+'">'+gname(g)+'</option>'});
+    $('#fGrade').innerHTML=o+'</optgroup>';
+  })();
   var dlg=$('#entryDlg'),curId=null,curSec=null,curImg='',curLinks=[],curFiles=[];
   function renderLinkRows(){
     $('#linkRows').innerHTML=curLinks.map(function(l,i){
@@ -1006,7 +1018,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     $('#fCat').innerHTML=Object.keys(sc.cats).map(function(k){return '<option value="'+k+'">'+tr(sc.cats[k])+'</option>'}).join('');
     $('#fTitle').value=mineOf(e,'title');
     $('#fCat').value=e?e.cat:Object.keys(sc.cats)[0];
-    $('#fGrade').value=String(e?e.grade:(grade||(view.year!=='all'?view.year:S.profile.grade)));
+    $('#fGrade').value=String(e?e.grade:(grade||defaultGrade()));
     $('#fDate').value=e?(e.date||''):new Date().toISOString().slice(0,10);
     $('#orgWrap').style.display=sc.org?'':'none';$('#orgLbl').textContent=sc.org?tr(sc.org):'';$('#fOrg').value=mineOf(e,'org');
     $('#resWrap').style.display=sc.res?'':'none';$('#resLbl').textContent=sc.res?tr(sc.res):'';$('#fRes').value=mineOf(e,'result');
@@ -1149,6 +1161,25 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     }else{b.dataset.armed='1';b.textContent=T('اضغط مرة أخرى للتأكيد','Tap again to confirm');setTimeout(function(){delete b.dataset.armed;b.textContent=tr('تجاهل تغييراتي')},3000)}
   });
   [dlg,pub,pw].forEach(function(d){d.addEventListener('click',function(e){if(e.target===d)d.close()})});
+
+
+  /* ---------- pick up published changes without a manual refresh ---------- */
+  function checkRemote(){
+    if(editing||document.hidden||dirty())return;
+    fetch('data.js?c='+Date.now(),{cache:'no-store'})
+      .then(function(r){return r.ok?r.text():''})
+      .then(function(t){
+        var m=t.match(/"updated"\s*:\s*(\d+)/);if(!m)return;
+        var remote=Number(m[1]);
+        if(remote<=(SEED.updated||0))return;
+        var last=0;try{last=Number(sessionStorage.getItem('portfolio-gh-reloaded'))||0}catch(e){}
+        if(last===remote)return;
+        try{sessionStorage.setItem('portfolio-gh-reloaded',String(remote))}catch(e){}
+        location.reload();
+      }).catch(function(){});
+  }
+  document.addEventListener('visibilitychange',checkRemote);
+  setInterval(checkRemote,60000);
 
   /* ---------- start ---------- */
   document.documentElement.lang=L;
