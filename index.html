@@ -223,6 +223,12 @@ dialog.shake{animation:shake .4s}
 .prev.on{display:block}
 .prev img{width:100%;max-height:170px;object-fit:cover;border-radius:12px;display:block}
 .prev button{position:absolute;top:8px;inset-inline-end:8px;background:var(--surface)}
+details{border:1px solid var(--line);border-radius:12px;padding:0 16px}
+summary{cursor:pointer;font-weight:700;padding:10px 0;line-height:1.6}
+.dbody{display:grid;gap:12px;padding:4px 0 16px}
+.pmsg{font-weight:700;font-size:15.5px;line-height:1.6;min-height:1.6em}
+.pmsg.ok{color:#0E8F6B}
+.pmsg.bad{color:#D6336C}
 ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;line-height:1.7}
 
 .toast{position:fixed;left:50%;top:84px;transform:translate(-50%,-30px);opacity:0;background:var(--ink);color:var(--bg);padding:4px 20px;border-radius:99px;font-weight:700;font-size:15.5px;pointer-events:none;transition:all .3s;z-index:50;max-width:calc(100% - 24px);text-align:center}
@@ -342,17 +348,38 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
 <dialog id="pubDlg">
   <div class="dlg">
     <h2>نشر التغييرات</h2>
-    <p class="hint">تعديلاتك محفوظة الآن في هذا المتصفح فقط. لكي يراها الجميع:</p>
-    <ol class="steps">
-      <li>اضغط «نسخ» أدناه.</li>
-      <li>في GitHub افتح ملف <b dir="ltr">data.js</b> واضغط أيقونة القلم.</li>
-      <li>امسح المحتوى القديم والصق النص الجديد، ثم اضغط Commit changes.</li>
-      <li>انتظر دقيقة ثم حدّث الصفحة.</li>
-    </ol>
-    <textarea id="pubText" class="ltr" style="min-height:150px;font-size:12.5px" spellcheck="false"></textarea>
+    <p class="hint" id="pubState" data-dyn="1"></p>
+    <div class="acts"><button type="button" class="btn primary" id="pubNow" data-dyn="1">نشر الآن</button></div>
+    <p class="pmsg" id="pubMsg" data-dyn="1" role="status"></p>
+    <details id="ghBox">
+      <summary>ربط الموقع مع GitHub</summary>
+      <div class="dbody">
+        <p class="hint">يلزم مرة واحدة فقط. المفتاح يُحفظ في هذا المتصفح ولا يظهر لأحد.</p>
+        <label>المستودع <input id="ghRepo" class="ltr" placeholder="username/repository" autocomplete="off"></label>
+        <label>مفتاح GitHub <input id="ghToken" type="password" class="ltr" autocomplete="off"></label>
+        <ol class="steps">
+          <li>في GitHub اضغط صورتك في الأعلى ثم Settings.</li>
+          <li>في آخر القائمة اليمنى اختر Developer settings، ثم Personal access tokens، ثم Fine-grained tokens.</li>
+          <li>اضغط Generate new token وسمّه portfolio.</li>
+          <li>في Repository access اختر Only select repositories ثم اختر مستودع موقعك.</li>
+          <li>في Repository permissions اجعل Contents على Read and write.</li>
+          <li>اضغط Generate token، وانسخ المفتاح والصقه هنا.</li>
+        </ol>
+        <div class="acts"><button type="button" class="btn small" id="ghForget">حذف المفتاح المحفوظ</button></div>
+      </div>
+    </details>
+    <details>
+      <summary>الطريقة اليدوية: نسخ ولصق</summary>
+      <div class="dbody">
+        <p class="hint">انسخ النص والصقه فوق كل محتوى data.js في GitHub، ثم اضغط Commit changes.</p>
+        <textarea id="pubText" class="ltr" style="min-height:140px;font-size:12.5px" spellcheck="false"></textarea>
+        <div class="acts">
+          <button type="button" class="btn small" id="pubCopy">نسخ</button>
+          <button type="button" class="btn small" id="pubImport">استيراد من النص أعلاه</button>
+        </div>
+      </div>
+    </details>
     <div class="acts">
-      <button type="button" class="btn primary" id="pubCopy">نسخ</button>
-      <button type="button" class="btn" id="pubImport">استيراد من النص أعلاه</button>
       <button type="button" class="btn" id="pubDiscard" data-dyn="1">تجاهل تغييراتي</button>
       <button type="button" class="btn" id="pubClose">إغلاق</button>
     </div>
@@ -399,6 +426,18 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     'امسح المحتوى القديم والصق النص الجديد، ثم اضغط Commit changes.':'Delete the old content and paste the new text, then click Commit changes.',
     'انتظر دقيقة ثم حدّث الصفحة.':'Wait a minute, then refresh the page.',
     'نسخ':'Copy','استيراد من النص أعلاه':'Import from the text above','تجاهل تغييراتي':'Discard my changes','إغلاق':'Close',
+    'ربط الموقع مع GitHub':'Connect the site to GitHub',
+    'يلزم مرة واحدة فقط. المفتاح يُحفظ في هذا المتصفح ولا يظهر لأحد.':'Needed only once. The key is saved in this browser and shown to no one.',
+    'المستودع':'Repository','مفتاح GitHub':'GitHub key (token)',
+    'في GitHub اضغط صورتك في الأعلى ثم Settings.':'In GitHub, click your picture at the top, then Settings.',
+    'في آخر القائمة اليمنى اختر Developer settings، ثم Personal access tokens، ثم Fine-grained tokens.':'At the bottom of the left menu choose Developer settings, then Personal access tokens, then Fine-grained tokens.',
+    'اضغط Generate new token وسمّه portfolio.':'Click Generate new token and name it portfolio.',
+    'في Repository access اختر Only select repositories ثم اختر مستودع موقعك.':'Under Repository access choose Only select repositories, then pick your site repository.',
+    'في Repository permissions اجعل Contents على Read and write.':'Under Repository permissions set Contents to Read and write.',
+    'اضغط Generate token، وانسخ المفتاح والصقه هنا.':'Click Generate token, copy the key, and paste it here.',
+    'حذف المفتاح المحفوظ':'Remove saved key','الطريقة اليدوية: نسخ ولصق':'Manual way: copy and paste',
+    'انسخ النص والصقه فوق كل محتوى data.js في GitHub، ثم اضغط Commit changes.':'Copy the text and paste it over everything in data.js on GitHub, then click Commit changes.',
+    
     /* sections */
     'المشاريع التقنية والابتكارية':'Tech & Innovation Projects',
     'ما صنعته وكيف صنعته: برمجة، ابتكار، إلكترونيات، تصميم. مع الملفات والروابط.':'What I built and how I built it: coding, inventions, electronics, design. With files and links.',
@@ -544,7 +583,8 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
       catch(e){toast(T('تعذّر الحفظ في المتصفح. المساحة ممتلئة. جرّب ملفات أصغر.','Could not save in the browser. Storage is full. Try smaller files.'))}
     },250);
   }
-  function dirty(){return (S.updated||0)>(SEED.updated||0)}
+  var PUB_AT=Number(lsGet('portfolio-gh-pubat'))||0;
+  function dirty(){return (S.updated||0)>(SEED.updated||0)&&(S.updated||0)>PUB_AT}
   function updateDirty(){$('#bar').classList.toggle('dirty',dirty())}
 
   var view={year:'all',cat:'all'};
@@ -717,6 +757,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     });
     $('#pubDiscard').textContent=tr('تجاهل تغييراتي');
     $('#langBtn').textContent=T('English','العربية');
+    $('#pubNow').textContent=T('نشر الآن','Publish now');
   }
   function setLang(l){
     L=l;
@@ -990,10 +1031,90 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
   });
 
   /* ---------- publish ---------- */
-  var pub=$('#pubDlg');
+  var pub=$('#pubDlg'),TOK_KEY='portfolio-gh-token',REPO_KEY='portfolio-gh-repo',PUBAT_KEY='portfolio-gh-pubat';
+  function lsGet(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+  function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+  function guessRepo(){
+    var m=location.hostname.match(/^([^.]+)\.github\.io$/i);if(!m)return '';
+    var seg=location.pathname.split('/').filter(Boolean)[0];
+    if(seg&&!/\.html?$/i.test(seg))return m[1]+'/'+seg;
+    return m[1]+'/'+m[1]+'.github.io';
+  }
   function seedText(){return 'window.PORTFOLIO_SEED = '+JSON.stringify(S,null,1)+';\n'}
-  $('#pubBtn').addEventListener('click',function(){$('#pubText').value=seedText();pub.showModal()});
+  function b64(str){
+    var bytes=new TextEncoder().encode(str),bin='',CH=0x8000;
+    for(var i=0;i<bytes.length;i+=CH)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH));
+    return btoa(bin);
+  }
+  function pubMsg(text,kind){var m=$('#pubMsg');m.textContent=text||'';m.className='pmsg'+(kind?' '+kind:'')}
+  function pubStateText(){
+    $('#pubState').textContent=dirty()?T('لديك تغييرات لم تُنشر بعد.','You have changes that are not published yet.'):T('كل شيء منشور.','Everything is published.');
+  }
+  function openPub(){
+    var tok=lsGet(TOK_KEY);
+    $('#pubText').value=seedText();
+    $('#ghRepo').value=lsGet(REPO_KEY)||guessRepo();
+    $('#ghToken').value='';
+    $('#ghToken').placeholder=tok?'••••••••  ('+T('محفوظ','saved')+')':'github_pat_...';
+    $('#ghForget').style.display=tok?'':'none';
+    $('#ghBox').open=!tok;
+    pubMsg('');pubStateText();
+    pub.showModal();pub.scrollTop=0;
+  }
+  $('#pubBtn').addEventListener('click',openPub);
   $('#pubClose').addEventListener('click',function(){pub.close()});
+
+  function ghErr(status){
+    if(status===401)return T('المفتاح غير صحيح أو انتهت صلاحيته. أنشئ مفتاحًا جديدًا.','The key is wrong or has expired. Create a new key.');
+    if(status===403||status===404)return T('تعذّر الوصول إلى المستودع. تأكد من اسم المستودع ومن صلاحية Contents: Read and write.','Could not reach the repository. Check the repository name and the Contents: Read and write permission.');
+    if(status===409||status===422)return T('تغيّر الملف على GitHub أثناء النشر. حاول مرة أخرى.','The file changed on GitHub while publishing. Try again.');
+    return T('تعذّر الاتصال بـ GitHub. تحقق من الإنترنت وحاول مجددًا.','Could not reach GitHub. Check your connection and try again.');
+  }
+  async function ghPublish(token,repo,text){
+    var api='https://api.github.com/repos/'+repo+'/contents/data.js';
+    var base={'Authorization':'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'};
+    async function attempt(){
+      var r=await fetch(api,{headers:Object.assign({'Accept':'application/vnd.github.object+json'},base)});
+      var sha;
+      if(r.status===200){sha=(await r.json()).sha}
+      else if(r.status!==404){var e=new Error('get');e.status=r.status;throw e}
+      var body={message:'Update portfolio content',content:b64(text)};
+      if(sha)body.sha=sha;
+      var r2=await fetch(api,{method:'PUT',headers:Object.assign({'Accept':'application/vnd.github+json','Content-Type':'application/json'},base),body:JSON.stringify(body)});
+      if(!r2.ok){var e2=new Error('put');e2.status=r2.status;throw e2}
+    }
+    try{await attempt()}
+    catch(e){if(e.status===409||e.status===422)await attempt();else throw e}
+  }
+  $('#pubNow').addEventListener('click',async function(){
+    var btn=$('#pubNow');
+    var repo=$('#ghRepo').value.trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/,'').replace(/\/+$/,'');
+    var typed=$('#ghToken').value.trim(),token=typed||lsGet(TOK_KEY);
+    if(!token||!/^[^\/\s]+\/[^\/\s]+$/.test(repo)){
+      $('#ghBox').open=true;
+      pubMsg(T('أدخل المستودع ومفتاح GitHub أولًا.','Enter the repository and your GitHub key first.'),'bad');return;
+    }
+    btn.disabled=true;btn.textContent=T('جارٍ النشر…','Publishing…');pubMsg('');
+    try{
+      await ghPublish(token,repo,seedText());
+      if(typed)lsSet(TOK_KEY,typed);
+      lsSet(REPO_KEY,repo);
+      PUB_AT=S.updated||Date.now();lsSet(PUBAT_KEY,String(PUB_AT));
+      $('#ghToken').value='';$('#ghToken').placeholder='••••••••  ('+T('محفوظ','saved')+')';$('#ghForget').style.display='';
+      updateDirty();pubStateText();$('#ghBox').open=false;
+      pubMsg(T('تم النشر. سيظهر التحديث لجميع الزوار بعد دقيقة أو دقيقتين.','Published. Visitors will see the update in a minute or two.'),'ok');
+    }catch(e){
+      pubMsg(ghErr(e&&e.status),'bad');
+    }finally{
+      btn.disabled=false;btn.textContent=T('نشر الآن','Publish now');
+    }
+  });
+  $('#ghForget').addEventListener('click',function(){
+    lsDel(TOK_KEY);$('#ghToken').placeholder='github_pat_...';$('#ghForget').style.display='none';$('#ghBox').open=true;
+    pubMsg(T('تم حذف المفتاح من هذا المتصفح.','The key was removed from this browser.'));
+  });
+
   $('#pubCopy').addEventListener('click',function(){
     var ta=$('#pubText');ta.focus();ta.select();var ok=false;
     try{ok=document.execCommand('copy')}catch(e){}
@@ -1011,7 +1132,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
   $('#pubDiscard').addEventListener('click',function(ev){
     var b=ev.currentTarget;
     if(b.dataset.armed){
-      try{localStorage.removeItem(KEY)}catch(e){}
+      lsDel(KEY);
       S=ensureEn(clone(SEED));delete b.dataset.armed;b.textContent=tr('تجاهل تغييراتي');pub.close();updateDirty();render(false);toast(T('عدنا إلى النسخة المنشورة','Back to the published version'));
     }else{b.dataset.armed='1';b.textContent=T('اضغط مرة أخرى للتأكيد','Tap again to confirm');setTimeout(function(){delete b.dataset.armed;b.textContent=tr('تجاهل تغييراتي')},3000)}
   });
