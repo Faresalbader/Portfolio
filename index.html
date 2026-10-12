@@ -193,6 +193,7 @@ footer a{font-weight:700;font-size:1.15rem}
 /* edit bar */
 .bar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,160%);display:flex;gap:6px;padding:8px;border-radius:99px;background:var(--ink);color:var(--bg);box-shadow:0 18px 40px -12px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);z-index:30;max-width:calc(100% - 24px)}
 body[data-edit="true"] .bar{transform:translate(-50%,0)}
+.bar button:disabled{opacity:.6;cursor:progress}
 .bar button{border:0;background:transparent;color:var(--bg);font-weight:700;padding:3px 16px;border-radius:99px;white-space:nowrap;position:relative}
 .bar button:hover{background:color-mix(in srgb,var(--bg) 18%,transparent)}
 .bar .add{background:var(--hi);color:var(--hi-ink)}
@@ -278,6 +279,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
 
 <div class="bar" id="bar" role="toolbar" aria-label="أدوات التعديل">
   <button class="add" id="addBtn" hidden>إضافة</button>
+  <button id="trBtn" data-dyn="1">ترجمة</button>
   <button id="pubBtn">نشر<span class="dot"></span></button>
   <button id="doneBtn">تم</button>
 </div>
@@ -758,6 +760,7 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     $('#pubDiscard').textContent=tr('تجاهل تغييراتي');
     $('#langBtn').textContent=T('English','العربية');
     $('#pubNow').textContent=T('نشر الآن','Publish now');
+    $('#trBtn').textContent=T('ترجمة','Translate');
   }
   function setLang(l){
     L=l;
@@ -1028,6 +1031,94 @@ ol.steps{margin:0;padding-inline-start:22px;display:grid;gap:4px;font-size:16px;
     Object.assign(ent,common);ent.en=ent.en||{};
     Object.keys(texts).forEach(function(f){if(L==='en')ent.en[f]=texts[f];else ent[f]=texts[f]});
     save();dlg.close();render(false);toast(curId?T('تم تحديث العمل','Entry updated'):T('تمت الإضافة','Entry added'));
+  });
+
+
+  /* ---------- auto-translate (Arabic to English) ---------- */
+  async function getTranslator(){
+    try{
+      if(typeof self.Translator!=='undefined'){
+        var av=await Promise.race([self.Translator.availability({sourceLanguage:'ar',targetLanguage:'en'}),new Promise(function(r){setTimeout(function(){r('unavailable')},1500)})]);
+        if(av==='available'){
+          var t=await self.Translator.create({sourceLanguage:'ar',targetLanguage:'en'});
+          return function(s){return t.translate(s)};
+        }
+      }
+    }catch(e){}
+    return null;
+  }
+  function chunkText(s,max){
+    var pieces=s.match(/[^.؟?!\n]+[.؟?!\n]*/g)||[s],out=[],cur='';
+    pieces.forEach(function(p){
+      while(p.length>max){
+        var cut=p.lastIndexOf(' ',max);if(cut<1)cut=max;
+        if(cur){out.push(cur);cur=''}
+        out.push(p.slice(0,cut));p=p.slice(cut);
+      }
+      if((cur+p).length>max){out.push(cur);cur=p}else cur+=p;
+    });
+    if(cur)out.push(cur);
+    return out.filter(function(x){return x.trim()});
+  }
+  async function myMemory(s){
+    var res=[],parts=chunkText(s,200);
+    for(var i=0;i<parts.length;i++){
+      var r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(parts[i])+'&langpair=ar|en');
+      if(!r.ok)throw new Error('http');
+      var j=await r.json(),txt=(j.responseData&&j.responseData.translatedText)||'';
+      if(/MYMEMORY WARNING/i.test(txt)||Number(j.responseStatus)===429)throw new Error('quota');
+      if(Number(j.responseStatus)!==200)throw new Error('http');
+      res.push(txt);
+    }
+    return res.join(' ');
+  }
+  function collectTasks(){
+    var tasks=[],A=S.about,E=S.en.about;
+    function add(src,set){if(src&&String(src).trim())tasks.push({src:String(src).trim(),set:set})}
+    if(!S.en.profile.tagline)add(S.profile.tagline,function(v){S.en.profile.tagline=v});
+    if(!E.bio)add(A.bio,function(v){E.bio=v});
+    if(!E.goals)add(A.goals,function(v){E.goals=v});
+    if(!E.facts.length)A.facts.forEach(function(f,i){
+      add(f.k,function(v){E.facts[i]=E.facts[i]||{k:'',v:''};E.facts[i].k=v});
+      add(f.v,function(v){E.facts[i]=E.facts[i]||{k:'',v:''};E.facts[i].v=v});
+    });
+    LIST_KEYS.forEach(function(key){
+      if(!E[key].length)A[key].forEach(function(s,i){add(s,function(v){E[key][i]=v})});
+    });
+    S.entries.forEach(function(e){
+      ['title','org','result','desc'].forEach(function(f){
+        if(e[f]&&!(e.en&&e.en[f]))add(e[f],function(v){e.en=e.en||{};e.en[f]=v});
+      });
+    });
+    return tasks;
+  }
+  async function autoTranslate(){
+    var btn=$('#trBtn'),tasks=collectTasks();
+    if(!tasks.length){toast(T('كل النصوص العربية لها نسخة إنجليزية بالفعل.','Every Arabic text already has an English version.'));return}
+    btn.disabled=true;
+    var fn=await getTranslator()||myMemory,done=0,failed=0,quota=false;
+    for(var i=0;i<tasks.length;i++){
+      btn.textContent=(i+1)+'/'+tasks.length;
+      try{
+        var out=((await fn(tasks[i].src))||'').trim();
+        if(out){tasks[i].set(out);done++}else failed++;
+      }catch(e){failed++;if(e&&e.message==='quota'){quota=true;break}}
+    }
+    LIST_KEYS.forEach(function(k){S.en.about[k]=S.en.about[k].filter(Boolean)});
+    S.en.about.facts=S.en.about.facts.filter(Boolean);
+    if(done)save();
+    render(false);
+    btn.disabled=false;btn.textContent=T('ترجمة','Translate');
+    if(quota)toast(T('وصلت إلى حد الترجمة المجانية لهذا اليوم. جرّب غدًا. تمت ترجمة '+done+' نصًا.','Daily free translation limit reached. Try again tomorrow. '+done+' texts were translated.'));
+    else if(failed&&!done)toast(T('تعذّرت الترجمة. تحقق من الإنترنت وحاول مجددًا.','Translation failed. Check your connection and try again.'));
+    else toast(T('تمت ترجمة '+done+' نصًا. راجعها في وضع English ثم اضغط نشر.','Translated '+done+' texts. Review them in English mode, then press Publish.'));
+  }
+  $('#trBtn').addEventListener('click',function(ev){
+    var b=ev.currentTarget;
+    if(b.dataset.armed){delete b.dataset.armed;autoTranslate();return}
+    b.dataset.armed='1';b.textContent=T('اضغط للتأكيد','Tap to confirm');
+    toast(T('سيتم ترجمة النصوص العربية التي ليس لها نسخة إنجليزية. اضغط مرة أخرى للمتابعة.','Arabic texts without an English version will be translated. Press again to continue.'));
+    setTimeout(function(){if(b.dataset.armed){delete b.dataset.armed;if(!b.disabled)b.textContent=T('ترجمة','Translate')}},4000);
   });
 
   /* ---------- publish ---------- */
