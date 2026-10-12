@@ -1,7 +1,7 @@
 window.PORTFOLIO_SEED = {
- "updated": 1,
+ "updated": 1791785865679,
  "profile": {
-  "name": "اسمك",
+  "name": "فارس البدر",
   "tagline": "طالب في الصف العاشر، أصنع وأجرّب وأوثّق كل شيء. تكبر هذه الصفحة معي حتى التخرج.",
   "email": "you@example.com",
   "grade": 10,
